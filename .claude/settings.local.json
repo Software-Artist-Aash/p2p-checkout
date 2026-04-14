@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(npm install:*)",
+      "Bash(npx hardhat:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.privy.io)",
+      "Bash(ls:*)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); print\\(json.dumps\\(data['abi'], indent=2\\)\\)\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\(json.dumps\\(d.get\\('scripts',{}\\), indent=2\\)\\)\")",
+      "Bash(npm run:*)",
+      "Bash(xargs cat:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx vite:*)",
+      "Bash(curl -s -X POST https://api.studio.thegraph.com/query/1745491/event-indexer/version/latest -H 'Content-Type: application/json' -d '{\"query\":\"{ orders\\(first: 2, orderBy: placedAt, orderDirection: desc\\) { orderId status type userAddress usdcAmount } }\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST https://api.studio.thegraph.com/query/1745491/event-indexer/version/latest -H 'Content-Type: application/json' -d '{\"query\":\"{ _meta { block { number } } }\"}')",
+      "Bash(curl -s -X POST https://api.studio.thegraph.com/query/1745491/event-indexer/version/latest -H 'Content-Type: application/json' -d '{\"query\":\"{ __type\\(name: \\\\\"Query\\\\\"\\) { fields { name args { name type { name kind ofType { name } } } } } }\"}')",
+      "Bash(python3 -c ':*)",
+      "Bash(cast call:*)",
+      "Bash(npm ls:*)",
+      "Bash(grep:*)",
+      "Bash(curl -s -X POST https://api.studio.thegraph.com/query/1745491/event-indexer/version/latest -H 'Content-Type: application/json' -d '{\"query\":\"{ __type\\(name: \\\\\"Query\\\\\"\\) { fields { name args { name } } } }\"}')",
+      "Bash(curl -s -X POST https://api.studio.thegraph.com/query/1745491/event-indexer/version/latest -H 'Content-Type: application/json' -d '{\"query\":\"{ integrators\\(first: 10\\) { id address isActive totalVolume activeOrderCount outstandingDebt } }\"}')",
+      "Bash(DIAMOND_ADDRESS=0xeb0BB8E3c014D915D9B2df03aBB130a1Fb44beb9 USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d npx hardhat run scripts/deploy-integrator-v2.ts --network baseSepolia)",
+      "Bash(DIAMOND_ADDRESS=0xeb0BB8E3c014D915D9B2df03aBB130a1Fb44beb9 INTEGRATOR_ADDRESS=0x175dCF36dbC7bfFA48211b2538c57B47985a43B1 USDC_THROUGH_INTEGRATOR=true npx hardhat run scripts/registerIntegrator.ts --network baseSepolia)",
+      "Bash(INTEGRATOR_ADDRESS=0x175dCF36dbC7bfFA48211b2538c57B47985a43B1 USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d NFT_NAME=\"MegapotNFTv2\" NFT_SYMBOL=\"MNFTv2\" npx hardhat run scripts/deploy-client.ts --network baseSepolia)",
+      "Bash(INTEGRATOR_ADDRESS=0x3De1682b6ecC0b58ecfC0cF2Be3bb5ae7cC9B0AE USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d npx hardhat run scripts/deploy-client.ts --network baseSepolia)"
+    ]
+  }
+}
