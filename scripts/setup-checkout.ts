@@ -20,8 +20,12 @@ const DIAMOND_ADDRESS = process.env.DIAMOND_ADDRESS || "";
 const INTEGRATOR_ADDRESS = process.env.INTEGRATOR_ADDRESS || "";
 const ERC721_CLIENT_ADDRESS = process.env.ERC721_CLIENT_ADDRESS || "";
 
-const PRODUCT_ID = 1;
-const PRODUCT_PRICE = ethers.parseUnits("10", 6); // 10 USDC
+// Prices must match merchant-app/src/lib/config.ts PRODUCTS
+const PRODUCTS: Array<{ id: number; priceUsdc: string }> = [
+  { id: 1, priceUsdc: "5" },
+  { id: 2, priceUsdc: "10" },
+  { id: 3, priceUsdc: "25" },
+];
 
 async function main() {
   if (!DIAMOND_ADDRESS || !INTEGRATOR_ADDRESS || !ERC721_CLIENT_ADDRESS) {
@@ -80,9 +84,9 @@ async function main() {
     console.log("   Done. Tx:", tx2.hash);
   }
 
-  // ─── 3. Set product price ─────────────────────────────────────────
+  // ─── 3. Set product prices ────────────────────────────────────────
 
-  console.log(`3. Setting product ${PRODUCT_ID} price to ${ethers.formatUnits(PRODUCT_PRICE, 6)} USDC...`);
+  console.log(`3. Setting prices for ${PRODUCTS.length} products...`);
   const client = await ethers.getContractAt(
     [
       "function setProductPrice(uint256 productId, uint256 price) external",
@@ -93,13 +97,16 @@ async function main() {
     ERC721_CLIENT_ADDRESS
   );
 
-  const currentPrice = await client.getProductPrice(PRODUCT_ID);
-  if (currentPrice == PRODUCT_PRICE) {
-    console.log("   Already set, skipping.");
-  } else {
-    const tx3 = await client.setProductPrice(PRODUCT_ID, PRODUCT_PRICE);
-    await tx3.wait();
-    console.log("   Done. Tx:", tx3.hash);
+  for (const p of PRODUCTS) {
+    const price = ethers.parseUnits(p.priceUsdc, 6);
+    const current = await client.getProductPrice(p.id);
+    if (current == price) {
+      console.log(`   Product ${p.id} (${p.priceUsdc} USDC): already set, skipping.`);
+    } else {
+      const tx = await client.setProductPrice(p.id, price);
+      await tx.wait();
+      console.log(`   Product ${p.id} (${p.priceUsdc} USDC): done. Tx: ${tx.hash}`);
+    }
   }
 
   // ─── 4. Verify everything ─────────────────────────────────────────
@@ -126,16 +133,19 @@ async function main() {
   console.log(`Base TX limit: ${ethers.formatUnits(baseTxLimit, 6)} USDC per tx`);
   console.log(`Daily TX count limit: ${dailyTxCountLimit.toString()} per day`);
 
-  const price = await client.getProductPrice(PRODUCT_ID);
-  console.log(`Product ${PRODUCT_ID} price: ${ethers.formatUnits(price, 6)} USDC`);
-  if (price == 0n) console.log("   ERROR: product price not set!");
+  let allPricesSet = true;
+  for (const p of PRODUCTS) {
+    const price = await client.getProductPrice(p.id);
+    console.log(`Product ${p.id} price: ${ethers.formatUnits(price, 6)} USDC`);
+    if (price == 0n) { console.log("   ERROR: product price not set!"); allPricesSet = false; }
+  }
 
   const nftName = await client.name();
   const nftSymbol = await client.symbol();
   console.log(`NFT: ${nftName} (${nftSymbol})`);
 
   console.log("");
-  const allGood = isActive && clientCheck.isRegistered && price > 0n;
+  const allGood = isActive && clientCheck.isRegistered && allPricesSet;
   if (allGood) {
     console.log("All checks passed. Ready to test checkout flow.");
   } else {

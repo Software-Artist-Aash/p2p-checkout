@@ -50,6 +50,7 @@ export const INTEGRATOR_ABI = [
     inputs: [
       { name: "client", type: "address" },
       { name: "productId", type: "uint256" },
+      { name: "quantity", type: "uint256" },
       { name: "currency", type: "bytes32" },
       { name: "circleId", type: "uint256" },
       { name: "pubKey", type: "string" },

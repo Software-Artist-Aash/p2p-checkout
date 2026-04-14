@@ -152,7 +152,7 @@ export default function CheckoutPage() {
       const data = encodeFunctionData({
         abi: INTEGRATOR_ABI,
         functionName: "userPlaceOrder",
-        args: [clientAddr, BigInt(productId), currency, 1n, pubKey, 0n, 0n],
+        args: [clientAddr, BigInt(productId), BigInt(quantity), currency, 0n, pubKey, 0n, 0n],
       });
       const { hash } = await sendTransaction({ to: integratorAddr, data });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
