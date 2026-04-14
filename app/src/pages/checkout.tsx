@@ -154,7 +154,20 @@ export default function CheckoutPage() {
         functionName: "userPlaceOrder",
         args: [clientAddr, BigInt(productId), BigInt(quantity), currency, BigInt(selectedCurrency.circleId), pubKey, 0n, 0n],
       });
-      const { hash } = await sendTransaction({ to: integratorAddr, data, gasLimit: 600000 });
+
+      // Merchant assignment in the Diamond loops over eligible merchants, so
+      // gas grows with circle size. Estimate + 50% buffer; fall back to 2M.
+      let gasLimit = 2_000_000n;
+      try {
+        const estimated = await publicClient.estimateGas({
+          account: address,
+          to: integratorAddr,
+          data,
+        });
+        gasLimit = (estimated * 3n) / 2n;
+      } catch {}
+
+      const { hash } = await sendTransaction({ to: integratorAddr, data, gasLimit: Number(gasLimit) });
       const receipt = await publicClient.waitForTransactionReceipt({ hash });
 
       let orderId: string | null = null;
