@@ -1,8 +1,33 @@
 import { useState, useMemo, useCallback } from "react";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
-import { createPublicClient, http, encodeFunctionData, stringToHex } from "viem";
+import { createPublicClient, http, encodeFunctionData, stringToHex, keccak256, toHex } from "viem";
 import { baseSepolia } from "viem/chains";
 import { getRelayIdentity } from "@p2pdotme/sdk/payload";
+
+const KNOWN_ERRORS: Record<string, string> = {
+  "0xfb42a67d": "Currency mismatch — the merchant circle doesn't support this currency.",
+  "0x9e05e975": "Client not registered on the integrator.",
+  "0x79de4af5": "Product not found — price not set for this product.",
+  "0x524f409b": "Quantity must be at least 1.",
+  "0xea8e4eb5": "Not authorized — daily transaction limit reached or per-tx limit exceeded.",
+  "0x5fc483c5": "Only the integrator owner can do this.",
+};
+
+function decodeRevertReason(err: any): string {
+  // Viem wraps revert data in nested cause objects
+  const data = err?.cause?.data?.data ?? err?.data?.data ?? err?.data ?? err?.cause?.data ?? "";
+  if (typeof data === "string" && data.startsWith("0x") && data.length >= 10) {
+    const selector = data.slice(0, 10);
+    const known = KNOWN_ERRORS[selector];
+    if (known) return known;
+  }
+  // Fallback to viem's shortMessage or the raw message
+  const msg = err?.shortMessage || err?.cause?.shortMessage || err?.message || "";
+  if (msg.includes("reverted")) return "Transaction would fail. Check your limits and try a smaller amount.";
+  if (msg.includes("rejected") || msg.includes("denied")) return "Transaction rejected in wallet.";
+  if (msg.includes("insufficient funds")) return "Insufficient funds for gas.";
+  return msg || "Transaction failed. Please try again.";
+}
 import {
   P2PCheckout,
   parseOrderIdFromReceipt,
@@ -79,20 +104,29 @@ export default function Store() {
       ],
     });
 
-    let gasLimit = 2_000_000n;
+    // Estimate gas — if this fails, the tx WOULD revert on chain.
+    // Decode the revert reason and surface it instead of sending a doomed tx.
+    let gasLimit: bigint;
     try {
       const est = await publicClient.estimateGas({
         account: signer.address, to: INTEGRATOR_ADDRESS, data,
       });
       gasLimit = (est * 3n) / 2n;
-    } catch {}
+    } catch (err: any) {
+      throw new Error(decodeRevertReason(err));
+    }
 
     const { hash } = await signer.sendTransaction({
       to: INTEGRATOR_ADDRESS, data, gasLimit: Number(gasLimit),
     });
     const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+    if (receipt.status === "reverted") {
+      throw new Error("Transaction reverted on chain. You were not charged USDC.");
+    }
+
     const orderId = parseOrderIdFromReceipt(receipt);
-    if (!orderId) throw new Error("Order placed but could not parse order ID");
+    if (!orderId) throw new Error("Order confirmed but could not read order ID from receipt.");
 
     return { orderId, txHash: hash };
   }, [signer, checkoutProduct, quantities]);
