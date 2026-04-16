@@ -26,7 +26,28 @@
       "Bash(DIAMOND_ADDRESS=0xeb0BB8E3c014D915D9B2df03aBB130a1Fb44beb9 USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d npx hardhat run scripts/deploy-integrator-v2.ts --network baseSepolia)",
       "Bash(DIAMOND_ADDRESS=0xeb0BB8E3c014D915D9B2df03aBB130a1Fb44beb9 INTEGRATOR_ADDRESS=0x175dCF36dbC7bfFA48211b2538c57B47985a43B1 USDC_THROUGH_INTEGRATOR=true npx hardhat run scripts/registerIntegrator.ts --network baseSepolia)",
       "Bash(INTEGRATOR_ADDRESS=0x175dCF36dbC7bfFA48211b2538c57B47985a43B1 USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d NFT_NAME=\"MegapotNFTv2\" NFT_SYMBOL=\"MNFTv2\" npx hardhat run scripts/deploy-client.ts --network baseSepolia)",
-      "Bash(INTEGRATOR_ADDRESS=0x3De1682b6ecC0b58ecfC0cF2Be3bb5ae7cC9B0AE USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d npx hardhat run scripts/deploy-client.ts --network baseSepolia)"
+      "Bash(INTEGRATOR_ADDRESS=0x3De1682b6ecC0b58ecfC0cF2Be3bb5ae7cC9B0AE USDC_ADDRESS=0x4095fE4f1E636f11A95820BA2bB87F335Bd1040d npx hardhat run scripts/deploy-client.ts --network baseSepolia)",
+      "Bash(git checkout:*)",
+      "Bash(git stash:*)",
+      "Bash(cp app/src/pages/checkout.tsx /tmp/checkout-demo.tsx)",
+      "Bash(cp app/src/pages/checkout-order.tsx /tmp/checkout-order-demo.tsx)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(cp /tmp/checkout-demo.tsx app/src/pages/checkout.tsx)",
+      "Bash(cp /tmp/checkout-order-demo.tsx app/src/pages/checkout-order.tsx)",
+      "Bash(git rebase:*)",
+      "Bash(node:*)",
+      "Bash(curl -s \"https://api.openchain.xyz/signature-database/v1/lookup?function=0xfb42a67d&filter=true\")",
+      "Bash(curl -s \"https://api.openchain.xyz/signature-database/v1/lookup?function=0xfb42a67d\")",
+      "Read(//Users/aashritgarg/Desktop/Work/P2P/**)",
+      "Bash(git remote:*)",
+      "Bash(curl -s https://registry.npmjs.org/@p2pdotme/sdk)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://registry.npmjs.org/@p2pdotme/sdk)",
+      "WebFetch(domain:docs.somnia.network)",
+      "Bash(xargs basename:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(kill %1)"
     ]
   }
 }

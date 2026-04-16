@@ -1,8 +1,7 @@
-import { useState } from "react";
-import { usePrivy } from "@privy-io/react-auth";
-import { buildCheckoutUrl } from "../lib/checkout-link";
+import { useState, useMemo } from "react";
+import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
+import { P2PCheckout, type CheckoutSigner } from "@p2pdotme/checkout-widget";
 import {
-  CHECKOUT_URL,
   INTEGRATOR_ADDRESS,
   CLIENT_ADDRESS,
   PRODUCTS,
@@ -10,26 +9,29 @@ import {
 
 export default function Store() {
   const { ready, authenticated, login, user, logout } = usePrivy();
+  const { sendTransaction } = useSendTransaction();
   const [quantities, setQuantities] = useState<Record<number, number>>({});
+  const [checkoutProduct, setCheckoutProduct] = useState<number | null>(null);
 
   const qty = (id: number) => quantities[id] ?? 1;
   const setQty = (id: number, q: number) =>
     setQuantities({ ...quantities, [id]: Math.max(1, Math.min(10, q)) });
 
+  const signer: CheckoutSigner | null = useMemo(() => {
+    const addr = user?.wallet?.address;
+    if (!addr) return null;
+    return {
+      address: addr as `0x${string}`,
+      sendTransaction: async (tx: any) => {
+        const result = await sendTransaction(tx);
+        return { hash: result.hash as `0x${string}` };
+      },
+    };
+  }, [user?.wallet?.address, sendTransaction]);
+
   const handleBuyNow = (productId: number) => {
-    if (!authenticated) {
-      login();
-      return;
-    }
-    const url = buildCheckoutUrl(CHECKOUT_URL, {
-      integrator: INTEGRATOR_ADDRESS,
-      client: CLIENT_ADDRESS,
-      productId,
-      quantity: qty(productId),
-      redirectUrl: `${window.location.origin}/success`,
-      currency: "INR",
-    });
-    window.location.href = url;
+    if (!authenticated) { login(); return; }
+    setCheckoutProduct(productId);
   };
 
   return (
@@ -93,19 +95,13 @@ export default function Store() {
                         style={{ ...s.qtyBtn, opacity: q <= 1 ? 0.4 : 1 }}
                         onClick={() => setQty(p.id, q - 1)}
                         disabled={q <= 1}
-                      >
-                        −
-                      </button>
-                      <span style={{ ...s.qtyValue, fontVariantNumeric: "tabular-nums" }}>
-                        {q}
-                      </span>
+                      >−</button>
+                      <span style={{ ...s.qtyValue, fontVariantNumeric: "tabular-nums" }}>{q}</span>
                       <button
                         style={{ ...s.qtyBtn, opacity: q >= 10 ? 0.4 : 1 }}
                         onClick={() => setQty(p.id, q + 1)}
                         disabled={q >= 10}
-                      >
-                        +
-                      </button>
+                      >+</button>
                     </div>
                   </div>
 
@@ -137,18 +133,35 @@ export default function Store() {
           <span style={{ fontWeight: 600, color: "#0a0b0d" }}>P2P.me</span>
         </div>
       </footer>
+
+      {/* Checkout widget modal */}
+      {checkoutProduct !== null && signer && (
+        <P2PCheckout
+          integratorAddress={INTEGRATOR_ADDRESS}
+          clientAddress={CLIENT_ADDRESS}
+          productId={checkoutProduct}
+          quantity={qty(checkoutProduct)}
+          signer={signer}
+          demo={true}
+          mode="modal"
+          open={true}
+          onClose={() => setCheckoutProduct(null)}
+          onComplete={(orderId) => {
+            setCheckoutProduct(null);
+            window.location.href = `/success?orderId=${orderId}`;
+          }}
+          onError={(err) => console.error("Checkout error:", err)}
+        />
+      )}
     </div>
   );
 }
 
 const s: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: "100vh",
-    background: "#fafafa",
-    fontFamily: "Inter, system-ui, sans-serif",
-    color: "#0a0b0d",
-    display: "flex",
-    flexDirection: "column",
+    minHeight: "100vh", background: "#fafafa",
+    fontFamily: "Inter, system-ui, sans-serif", color: "#0a0b0d",
+    display: "flex", flexDirection: "column",
   },
   header: { background: "#fff", borderBottom: "1px solid #eaeaea", padding: "14px 24px" },
   headerInner: {
@@ -180,10 +193,7 @@ const s: Record<string, React.CSSProperties> = {
     border: "1px solid #eaeaea", display: "flex", flexDirection: "column",
     boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
   },
-  image: {
-    width: "100%", aspectRatio: "1", objectFit: "cover" as const,
-    borderBottom: "1px solid #eaeaea",
-  },
+  image: { width: "100%", aspectRatio: "1", objectFit: "cover" as const, borderBottom: "1px solid #eaeaea" },
   cardBody: { padding: 20, display: "flex", flexDirection: "column", gap: 12, flex: 1 },
   cardTitle: { fontSize: 16, fontWeight: 600, margin: 0, letterSpacing: "-0.01em" },
   cardDesc: { color: "#6b6b6b", fontSize: 13, margin: 0, lineHeight: 1.5 },
@@ -195,10 +205,7 @@ const s: Record<string, React.CSSProperties> = {
     padding: "10px 0", borderTop: "1px solid #f0f0f0", borderBottom: "1px solid #f0f0f0",
   },
   qtyLabel: { fontSize: 13, color: "#6b6b6b", fontWeight: 500 },
-  qtyControl: {
-    display: "flex", alignItems: "center", gap: 0,
-    background: "#f5f5f5", borderRadius: 8, padding: 3,
-  },
+  qtyControl: { display: "flex", alignItems: "center", gap: 0, background: "#f5f5f5", borderRadius: 8, padding: 3 },
   qtyBtn: {
     width: 28, height: 28, background: "#fff", border: "1px solid #eaeaea",
     borderRadius: 6, fontSize: 16, fontWeight: 500, cursor: "pointer", color: "#0a0b0d",
@@ -207,8 +214,7 @@ const s: Record<string, React.CSSProperties> = {
   cardFooter: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: "auto" },
   totalLabel: {
     display: "block", fontSize: 11, color: "#9a9a9a",
-    textTransform: "uppercase" as const, letterSpacing: "0.06em",
-    fontWeight: 500, marginBottom: 2,
+    textTransform: "uppercase" as const, letterSpacing: "0.06em", fontWeight: 500, marginBottom: 2,
   },
   totalPrice: { fontSize: 18, fontWeight: 700 },
   buyBtn: {
