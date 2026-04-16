@@ -3,10 +3,8 @@ import { Buffer } from "buffer";
 
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { PrivyAppProvider } from "./providers/privy-provider";
-import CheckoutPage from "./pages/checkout";
-import CheckoutOrderPage from "./pages/checkout-order";
 import AdminLayout from "./pages/admin/admin-layout";
 import AdminDashboard from "./pages/admin/dashboard";
 import AdminOrders from "./pages/admin/orders";
@@ -18,17 +16,13 @@ function App() {
     <PrivyAppProvider>
       <BrowserRouter>
         <Routes>
-          {/* Checkout */}
-          <Route path="/checkout" element={<CheckoutPage />} />
-          <Route path="/checkout/order/:orderId" element={<CheckoutOrderPage />} />
-
-          {/* Admin */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="orders" element={<AdminOrders />} />
             <Route path="clients" element={<AdminClients />} />
             <Route path="limits" element={<AdminLimits />} />
           </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </PrivyAppProvider>

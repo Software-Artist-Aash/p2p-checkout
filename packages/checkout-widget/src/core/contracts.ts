@@ -1,3 +1,5 @@
+import { decodeEventLog } from "viem";
+
 const ORDER_TUPLE = {
   name: "",
   type: "tuple",
@@ -35,35 +37,6 @@ const ORDER_TUPLE = {
     { name: "circleId", type: "uint256" },
   ],
 } as const;
-
-export const INTEGRATOR_ABI = [
-  {
-    name: "userPlaceOrder",
-    type: "function",
-    stateMutability: "nonpayable",
-    inputs: [
-      { name: "client", type: "address" },
-      { name: "productId", type: "uint256" },
-      { name: "quantity", type: "uint256" },
-      { name: "currency", type: "bytes32" },
-      { name: "circleId", type: "uint256" },
-      { name: "pubKey", type: "string" },
-      { name: "preferredPaymentChannelConfigId", type: "uint256" },
-      { name: "fiatAmountLimit", type: "uint256" },
-    ],
-    outputs: [{ name: "orderId", type: "uint256" }],
-  },
-] as const;
-
-export const CLIENT_ABI = [
-  {
-    name: "getProductPrice",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ name: "productId", type: "uint256" }],
-    outputs: [{ name: "price", type: "uint256" }],
-  },
-] as const;
 
 export const DIAMOND_ABI = [
   {
@@ -103,7 +76,10 @@ export const DIAMOND_ABI = [
   },
 ] as const;
 
-export const CHECKOUT_ORDER_CREATED_EVENT = {
+export const DEFAULT_DIAMOND_ADDRESS = "0xeb0BB8E3c014D915D9B2df03aBB130a1Fb44beb9" as `0x${string}`;
+export const USDC_DECIMALS = 6;
+
+const CHECKOUT_ORDER_CREATED_EVENT = {
   type: "event" as const,
   name: "CheckoutOrderCreated",
   inputs: [
@@ -115,7 +91,7 @@ export const CHECKOUT_ORDER_CREATED_EVENT = {
   ],
 };
 
-export const B2B_ORDER_PLACED_EVENT = {
+const B2B_ORDER_PLACED_EVENT = {
   type: "event" as const,
   name: "B2BOrderPlaced",
   inputs: [
@@ -126,5 +102,23 @@ export const B2B_ORDER_PLACED_EVENT = {
   ],
 };
 
-export const DEFAULT_DIAMOND_ADDRESS = "0xeb0BB8E3c014D915D9B2df03aBB130a1Fb44beb9" as `0x${string}`;
-export const USDC_DECIMALS = 6;
+/**
+ * Convenience: parse orderId from a tx receipt containing
+ * CheckoutOrderCreated or B2BOrderPlaced events. Clients using
+ * standard integrators can use this in their placeOrder callback.
+ */
+export function parseOrderIdFromReceipt(receipt: { logs: readonly { data: `0x${string}`; topics: readonly `0x${string}`[] }[] }): string | null {
+  for (const log of receipt.logs) {
+    try {
+      const d = decodeEventLog({ abi: [CHECKOUT_ORDER_CREATED_EVENT], data: log.data, topics: log.topics });
+      if (d.eventName === "CheckoutOrderCreated") return (d.args as any).orderId.toString();
+    } catch {}
+  }
+  for (const log of receipt.logs) {
+    try {
+      const d = decodeEventLog({ abi: [B2B_ORDER_PLACED_EVENT], data: log.data, topics: log.topics });
+      if (d.eventName === "B2BOrderPlaced") return (d.args as any).orderId.toString();
+    } catch {}
+  }
+  return null;
+}

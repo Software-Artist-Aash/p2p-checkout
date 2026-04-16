@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { useCheckoutWallet } from "../../hooks/use-checkout-wallet";
+import { usePrivy, useWallets, getEmbeddedConnectedWallet } from "@privy-io/react-auth";
 import { createPublicClient, http } from "viem";
 import { baseSepolia, base } from "viem/chains";
 import { CHAIN_ID } from "../../lib/config";
@@ -20,14 +20,17 @@ const OWNER_ABI = [
 ] as const;
 
 const NAV_ITEMS = [
-  { path: "/admin", label: "Dashboard" },
-  { path: "/admin/orders", label: "Orders" },
-  { path: "/admin/clients", label: "Clients" },
-  { path: "/admin/limits", label: "RP & Limits" },
+  { path: "/", label: "Dashboard" },
+  { path: "/orders", label: "Orders" },
+  { path: "/clients", label: "Clients" },
+  { path: "/limits", label: "RP & Limits" },
 ];
 
 export default function AdminLayout() {
-  const { ready, authenticated, login, address } = useCheckoutWallet();
+  const { ready, authenticated, login } = usePrivy();
+  const { wallets } = useWallets();
+  const wallet = getEmbeddedConnectedWallet(wallets) ?? wallets[0] ?? null;
+  const address = wallet?.address as `0x${string}` | undefined;
   const location = useLocation();
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const integratorAddr = new URLSearchParams(window.location.search).get("integrator") as `0x${string}` | null;

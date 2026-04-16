@@ -1,5 +1,5 @@
 /**
- * Environment configuration for the checkout app.
+ * Environment configuration for the admin app.
  */
 
 // Privy

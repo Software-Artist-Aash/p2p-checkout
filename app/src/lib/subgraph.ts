@@ -19,68 +19,6 @@ export interface SubgraphOrder {
   fixedFeePaid: string;
 }
 
-const USER_ORDERS_QUERY = `
-  query GetUserOrders($userAddress: Bytes!) {
-    orders_collection(
-      where: { userAddress: $userAddress }
-      orderBy: placedAt
-      orderDirection: desc
-      first: 50
-    ) {
-      orderId
-      status
-      type
-      usdcAmount
-      fiatAmount
-      actualUsdcAmount
-      actualFiatAmount
-      currency
-      circleId
-      userAddress
-      placedAt
-      acceptedAt
-      paidAt
-      completedAt
-      cancelledAt
-      fixedFeePaid
-    }
-  }
-`;
-
-/**
- * Fetch all orders for a user from the subgraph.
- */
-export async function fetchUserOrders(
-  userAddress: string
-): Promise<SubgraphOrder[]> {
-  if (!SUBGRAPH_URL) {
-    console.warn("VITE_SUBGRAPH_URL not set");
-    return [];
-  }
-
-  const response = await fetch(SUBGRAPH_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      query: USER_ORDERS_QUERY,
-      variables: { userAddress: userAddress.toLowerCase() },
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Subgraph query failed: ${response.status}`);
-  }
-
-  const json = await response.json();
-
-  if (json.errors) {
-    console.error("Subgraph errors:", json.errors);
-    throw new Error(json.errors[0]?.message ?? "Subgraph query error");
-  }
-
-  return (json.data?.orders_collection ?? []) as SubgraphOrder[];
-}
-
 // ─── Admin Queries ────────────────────────────────────────────────
 
 export interface SubgraphIntegrator {
@@ -88,7 +26,6 @@ export interface SubgraphIntegrator {
   isActive: boolean;
   totalVolume: string;
   activeOrderCount: string;
-  outstandingDebt: string;
 }
 
 export interface SubgraphB2BOrder {
@@ -106,7 +43,6 @@ const INTEGRATOR_STATS_QUERY = `
       isActive
       totalVolume
       activeOrderCount
-      outstandingDebt
     }
   }
 `;

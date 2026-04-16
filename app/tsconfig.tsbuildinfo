@@ -1,0 +1,1 @@
+{"root":["./src/main.tsx","./src/vite-env.d.ts","./src/lib/config.ts","./src/lib/contracts.ts","./src/lib/subgraph.ts","./src/pages/admin/admin-layout.tsx","./src/pages/admin/clients.tsx","./src/pages/admin/dashboard.tsx","./src/pages/admin/limits.tsx","./src/pages/admin/orders.tsx","./src/providers/privy-provider.tsx"],"version":"5.9.3"}

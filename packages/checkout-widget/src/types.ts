@@ -7,24 +7,38 @@ export interface CheckoutSigner {
   }) => Promise<{ hash: `0x${string}` }>;
 }
 
+export interface PlaceOrderResult {
+  orderId: string;
+  txHash: string;
+}
+
 export interface P2PCheckoutProps {
-  integratorAddress: `0x${string}`;
-  clientAddress: `0x${string}`;
-  productId: number;
+  // --- Order source (pick one) ---
+  // A: tracking only — client already placed the order
+  orderId?: string;
+  // B: client provides a callback; widget shows "Pay now" and runs it
+  placeOrder?: () => Promise<PlaceOrderResult>;
+
+  // Display hints (used in mode B's pre-order screen)
+  amount?: string;
+  productName?: string;
+
+  // Required for paidBuyOrder + cancelOrder on Diamond
   signer: CheckoutSigner;
 
-  quantity?: number;
-  currency?: string;
+  // Optional
   chainId?: number;
   diamondAddress?: `0x${string}`;
   rpcUrl?: string;
+  currency?: string;
 
+  // UI
   mode?: "inline" | "modal";
   open?: boolean;
   demo?: boolean;
 
+  // Events
   onOrderPlaced?: (orderId: string, txHash: string) => void;
-  onStatusChange?: (orderId: string, status: OrderStatus) => void;
   onComplete?: (orderId: string) => void;
   onError?: (error: Error) => void;
   onCancel?: (orderId: string) => void;

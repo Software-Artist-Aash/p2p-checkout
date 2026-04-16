@@ -78,10 +78,6 @@ export default function AdminDashboard() {
     ? formatUnits(BigInt(stats.totalVolume), USDC_DECIMALS) + " USDC"
     : "0 USDC";
 
-  const debtUsdc = stats?.outstandingDebt
-    ? formatUnits(BigInt(stats.outstandingDebt), USDC_DECIMALS) + " USDC"
-    : "0 USDC";
-
   return (
     <div>
       <h1 style={s.title}>Dashboard</h1>
@@ -94,7 +90,6 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div style={s.grid}>
         <StatCard label="Total Volume" value={totalVolumeUsdc} />
-        <StatCard label="Outstanding Debt" value={debtUsdc} />
         <StatCard label="Total Orders" value={counts.total.toString()} />
         <StatCard label="In Progress" value={counts.inProgress.toString()} />
         <StatCard label="Completed" value={counts.completed.toString()} accent="#4ade80" />
