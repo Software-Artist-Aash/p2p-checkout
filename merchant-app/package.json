@@ -11,7 +11,7 @@
   "dependencies": {
     "@p2pdotme/checkout-widget": "file:../packages/checkout-widget",
     "@p2pdotme/sdk": "^1.0.4",
-    "@privy-io/react-auth": "^2.0.0",
+    "@privy-io/react-auth": "^3.13",
     "buffer": "^6.0.3",
     "react": "^18.3.0",
     "react-dom": "^18.3.0",

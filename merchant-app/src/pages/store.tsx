@@ -74,8 +74,8 @@ export default function Store() {
     if (!addr) return null;
     return {
       address: addr as `0x${string}`,
-      sendTransaction: async (tx: any) => {
-        const result = await sendTransaction(tx);
+      sendTransaction: async (tx) => {
+        const result = await sendTransaction(tx, { sponsor: true });
         return { hash: result.hash as `0x${string}` };
       },
     };
@@ -104,8 +104,6 @@ export default function Store() {
       ],
     });
 
-    // Estimate gas — if this fails, the tx WOULD revert on chain.
-    // Decode the revert reason and surface it instead of sending a doomed tx.
     let gasLimit: bigint;
     try {
       const est = await publicClient.estimateGas({
