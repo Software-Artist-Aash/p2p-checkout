@@ -12,12 +12,32 @@ export interface PlaceOrderResult {
   txHash: string;
 }
 
+// User-selected currency for a checkout session. Present in PlaceOrderContext
+// only when the caller passed the `currencies` prop and the widget rendered
+// the currency picker.
+export interface CurrencyOption {
+  symbol: string;
+  flag: string;
+  paymentMethod: string;
+  circleId: bigint;
+}
+
+export interface PlaceOrderContext {
+  currency?: CurrencyOption;
+}
+
 export interface P2PCheckoutProps {
   // --- Order source (pick one) ---
   // A: tracking only — client already placed the order
   orderId?: string;
-  // B: client provides a callback; widget shows "Pay now" and runs it
-  placeOrder?: () => Promise<PlaceOrderResult>;
+  // B: client provides a callback; widget shows "Pay now" and runs it.
+  // If `currencies` is also provided, `ctx.currency` holds the user's pick.
+  placeOrder?: (ctx: PlaceOrderContext) => Promise<PlaceOrderResult>;
+
+  // Enables an in-widget currency picker on the pre-order screen.
+  // Caller is responsible for only passing currencies that map to a
+  // registered merchant on the Diamond (circleId must match).
+  currencies?: CurrencyOption[];
 
   // Display hints (used in mode B's pre-order screen)
   amount?: string;

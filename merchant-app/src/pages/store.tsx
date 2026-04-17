@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
 import { createPublicClient, http, encodeFunctionData, stringToHex, keccak256, toHex } from "viem";
 import { baseSepolia } from "viem/chains";
@@ -33,12 +34,22 @@ import {
   parseOrderIdFromReceipt,
   type CheckoutSigner,
   type PlaceOrderResult,
+  type PlaceOrderContext,
+  type CurrencyOption,
 } from "@p2pdotme/checkout-widget";
 import {
   INTEGRATOR_ADDRESS,
   CLIENT_ADDRESS,
   PRODUCTS,
 } from "../lib/config";
+
+// Only currencies with a registered merchant on the Diamond are shown here.
+// Each entry maps to a distinct merchant circle on the Diamond; orders must be
+// placed with the matching circleId or the integrator reverts with CurrencyMismatch.
+const SUPPORTED_CURRENCIES: CurrencyOption[] = [
+  { symbol: "INR", flag: "🇮🇳", paymentMethod: "UPI", circleId: 1n },
+  { symbol: "BRL", flag: "🇧🇷", paymentMethod: "PIX", circleId: 2n },
+];
 
 const INTEGRATOR_ABI = [
   {
@@ -86,13 +97,14 @@ export default function Store() {
     setCheckoutProduct(productId);
   };
 
-  const placeOrder = useCallback(async (): Promise<PlaceOrderResult> => {
+  const placeOrder = useCallback(async (ctx: PlaceOrderContext): Promise<PlaceOrderResult> => {
     if (!signer || checkoutProduct === null) throw new Error("Not ready");
+    if (!ctx.currency) throw new Error("No currency selected");
 
     const relayResult = getRelayIdentity();
     if (relayResult.isErr()) throw new Error(relayResult.error.message);
     const pubKey = relayResult.value.publicKey;
-    const currency = stringToHex("INR", { size: 32 });
+    const currency = stringToHex(ctx.currency.symbol, { size: 32 });
     const q = qty(checkoutProduct);
 
     const data = encodeFunctionData({
@@ -100,7 +112,7 @@ export default function Store() {
       functionName: "userPlaceOrder",
       args: [
         CLIENT_ADDRESS, BigInt(checkoutProduct), BigInt(q),
-        currency, 1n, pubKey, 0n, 0n,
+        currency, ctx.currency.circleId, pubKey, 0n, 0n,
       ],
     });
 
@@ -141,7 +153,8 @@ export default function Store() {
             <span style={{ fontWeight: 600, fontSize: 16 }}>Demo Store</span>
           </div>
           {ready && (
-            <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Link to="/my-nfts" style={s.navLink}>My NFTs</Link>
               {authenticated ? (
                 <button style={s.walletChip} onClick={logout}>
                   <span style={s.walletDot} />
@@ -216,6 +229,7 @@ export default function Store() {
       {checkoutProduct !== null && signer && (
         <P2PCheckout
           placeOrder={placeOrder}
+          currencies={SUPPORTED_CURRENCIES}
           amount={activeProduct ? `${activeProduct.priceUsdc * activeQty} USDC` : undefined}
           productName={activeProduct ? `${activeProduct.name} × ${activeQty}` : undefined}
           signer={signer}
@@ -224,8 +238,9 @@ export default function Store() {
           open={true}
           onClose={() => setCheckoutProduct(null)}
           onComplete={(orderId) => {
+            const pid = checkoutProduct;
             setCheckoutProduct(null);
-            window.location.href = `/success?orderId=${orderId}`;
+            window.location.href = `/success?orderId=${orderId}${pid !== null ? `&productId=${pid}` : ""}`;
           }}
           onError={(err) => console.error("Checkout error:", err)}
         />
@@ -239,6 +254,7 @@ const s: Record<string, React.CSSProperties> = {
   header: { background: "#fff", borderBottom: "1px solid #eaeaea", padding: "14px 24px" },
   headerInner: { maxWidth: 1100, margin: "0 auto", display: "flex", justifyContent: "space-between", alignItems: "center" },
   logo: { width: 28, height: 28, borderRadius: 8, background: "#0a0b0d", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 14 },
+  navLink: { color: "#0a0b0d", textDecoration: "none", fontSize: 13, fontWeight: 500, padding: "8px 10px" },
   headerBtn: { padding: "8px 14px", background: "#0a0b0d", color: "#fff", border: "none", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   walletChip: { display: "flex", alignItems: "center", gap: 8, height: 32, padding: "0 10px 0 8px", background: "#f5f5f5", border: "1px solid #eaeaea", borderRadius: 999, fontSize: 12, color: "#0a0b0d", cursor: "pointer" },
   walletDot: { width: 8, height: 8, borderRadius: 999, background: "#0f9b53" },

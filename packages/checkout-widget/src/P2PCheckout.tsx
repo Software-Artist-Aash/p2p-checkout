@@ -4,7 +4,7 @@ import type { P2PCheckoutProps } from "./types";
 import { useOrderMachine } from "./core/order-machine";
 import { CURRENCIES } from "./core/config";
 import { DEFAULT_DIAMOND_ADDRESS, USDC_DECIMALS } from "./core/contracts";
-import { color, radius, font, weight, S } from "./ui/theme";
+import { color, radius, font, weight, shadow, S } from "./ui/theme";
 import { Modal } from "./ui/Modal";
 import {
   Spinner, PulseDot, CenterStatus, SuccessIcon, XIcon,
@@ -17,6 +17,7 @@ export function P2PCheckout(props: P2PCheckoutProps) {
     amount, productName, signer,
     chainId = 84532, diamondAddress = DEFAULT_DIAMOND_ADDRESS, rpcUrl,
     currency: demoCurrency,
+    currencies,
     mode = "modal", open = true, demo = false,
     onClose, onOrderPlaced, onComplete, onError, onCancel,
   } = props;
@@ -26,11 +27,27 @@ export function P2PCheckout(props: P2PCheckoutProps) {
   const [copied, setCopied] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [isMarkingPaid, setIsMarkingPaid] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState(currencies?.[0]);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Close the dropdown when the user clicks outside it
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [dropdownOpen]);
 
   const { state, handlePlaceOrder, markPaid, cancelOrder } = useOrderMachine({
     orderId: initialOrderId, placeOrder,
     signer, chainId, diamondAddress, rpcUrl, demo,
-    demoCurrency, onOrderPlaced, onComplete, onError, onCancel,
+    demoCurrency, selectedCurrency,
+    onOrderPlaced, onComplete, onError, onCancel,
   });
 
   const copy = (text: string, label: string) => {
@@ -98,6 +115,71 @@ export function P2PCheckout(props: P2PCheckoutProps) {
               </div>
             )}
             {(amount || productName) && <div style={S.divider} />}
+            {currencies && currencies.length > 0 && selectedCurrency && (
+              <div style={{ marginBottom: 16 }}>
+                <p style={{ ...S.label, marginBottom: 8 }}>Pay with</p>
+                <div ref={dropdownRef} style={{ position: "relative" }}>
+                  <button
+                    type="button"
+                    onClick={() => setDropdownOpen((o) => !o)}
+                    style={{
+                      width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                      gap: 10, padding: "12px 14px", borderRadius: radius.md,
+                      border: `1px solid ${color.border}`, background: color.surface,
+                      color: color.text, fontSize: font.base, fontWeight: weight.medium, cursor: "pointer",
+                    }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <span style={{ fontSize: 18 }}>{selectedCurrency.flag}</span>
+                      <span>{selectedCurrency.paymentMethod}</span>
+                      <span style={{ fontSize: font.sm, color: color.textMuted, fontWeight: weight.medium }}>
+                        {selectedCurrency.symbol}
+                      </span>
+                    </span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      style={{ color: color.textMuted, transform: dropdownOpen ? "rotate(180deg)" : "none", transition: "transform 0.15s" }}>
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </button>
+                  {dropdownOpen && (
+                    <div style={{
+                      position: "absolute", top: "calc(100% + 4px)", left: 0, right: 0, zIndex: 10,
+                      background: color.surface, border: `1px solid ${color.border}`,
+                      borderRadius: radius.md, boxShadow: shadow.pop, overflow: "hidden",
+                    }}>
+                      {currencies.map((c) => {
+                        const active = selectedCurrency.symbol === c.symbol;
+                        return (
+                          <button key={c.symbol} type="button"
+                            onClick={() => { setSelectedCurrency(c); setDropdownOpen(false); }}
+                            style={{
+                              width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                              gap: 10, padding: "12px 14px", border: "none",
+                              background: active ? color.accentSoft : "transparent",
+                              color: color.text, fontSize: font.base, fontWeight: weight.medium,
+                              cursor: "pointer", textAlign: "left",
+                            }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <span style={{ fontSize: 18 }}>{c.flag}</span>
+                              <span>{c.paymentMethod}</span>
+                              <span style={{ fontSize: font.sm, color: color.textMuted, fontWeight: weight.medium }}>
+                                {c.symbol}
+                              </span>
+                            </span>
+                            {active && (
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={color.accent}
+                                strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {state.error && (
               <div style={{ marginBottom: 12, padding: "10px 12px", background: color.dangerSoft, border: `1px solid ${color.danger}22`, borderRadius: radius.md }}>
                 <span style={{ color: color.danger, fontSize: font.md }}>{state.error}</span>

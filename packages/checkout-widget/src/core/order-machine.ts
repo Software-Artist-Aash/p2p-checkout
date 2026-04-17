@@ -2,7 +2,7 @@ import { useReducer, useCallback, useEffect, useRef } from "react";
 import { createPublicClient, http, encodeFunctionData, fromHex } from "viem";
 import { baseSepolia, base } from "viem/chains";
 import { decryptPaymentAddress } from "@p2pdotme/sdk/payload";
-import type { CheckoutSigner, CheckoutPhase, PlaceOrderResult } from "../types";
+import type { CheckoutSigner, CheckoutPhase, PlaceOrderResult, PlaceOrderContext, CurrencyOption } from "../types";
 import { OrderStatus } from "../types";
 import { DIAMOND_ABI } from "./contracts";
 import { DEMO_FIAT_RATE } from "./config";
@@ -50,13 +50,14 @@ function reducer(state: OrderState, action: OrderAction): OrderState {
 
 export interface UseOrderMachineOpts {
   orderId?: string;
-  placeOrder?: () => Promise<PlaceOrderResult>;
+  placeOrder?: (ctx: PlaceOrderContext) => Promise<PlaceOrderResult>;
   signer: CheckoutSigner;
   chainId: number;
   diamondAddress: `0x${string}`;
   rpcUrl?: string;
   demo?: boolean;
   demoCurrency?: string;
+  selectedCurrency?: CurrencyOption;
   onOrderPlaced?: (orderId: string, txHash: string) => void;
   onComplete?: (orderId: string) => void;
   onError?: (error: Error) => void;
@@ -120,7 +121,7 @@ export function useOrderMachine(opts: UseOrderMachineOpts) {
       const fakeId = `demo${Date.now()}`;
       dispatch({ type: "PLACED", orderId: fakeId, txHash: "0xdemo" });
       opts.onOrderPlaced?.(fakeId, "0xdemo");
-      const cur = opts.demoCurrency ?? "INR";
+      const cur = opts.selectedCurrency?.symbol ?? opts.demoCurrency ?? "INR";
       setTimeout(() => {
         const rate = DEMO_FIAT_RATE[cur] ?? 1;
         dispatch({ type: "ACCEPTED", fiatAmount: BigInt(Math.round(10 * 1e6 * rate)), usdcAmount: BigInt(10 * 1e6), currency: cur });
@@ -130,7 +131,7 @@ export function useOrderMachine(opts: UseOrderMachineOpts) {
     }
 
     try {
-      const result = await opts.placeOrder();
+      const result = await opts.placeOrder({ currency: opts.selectedCurrency });
       dispatch({ type: "PLACED", orderId: result.orderId, txHash: result.txHash });
       opts.onOrderPlaced?.(result.orderId, result.txHash);
     } catch (err: any) {

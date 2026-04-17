@@ -11,7 +11,7 @@ export interface CurrencyConfig {
 export const CURRENCIES: CurrencyConfig[] = [
   { symbol: "INR", name: "Indian Rupee", flag: "🇮🇳", paymentMethod: "UPI", hasQR: true, circleId: 1 },
   { symbol: "IDR", name: "Indonesian Rupiah", flag: "🇮🇩", paymentMethod: "QRIS", hasQR: false, circleId: 1 },
-  { symbol: "BRL", name: "Brazilian Real", flag: "🇧🇷", paymentMethod: "PIX", hasQR: false, circleId: 1 },
+  { symbol: "BRL", name: "Brazilian Real", flag: "🇧🇷", paymentMethod: "PIX", hasQR: false, circleId: 2 },
   { symbol: "ARS", name: "Argentine Peso", flag: "🇦🇷", paymentMethod: "Alias", hasQR: false, circleId: 1 },
   { symbol: "MEX", name: "Mexican Peso", flag: "🇲🇽", paymentMethod: "SPEI", hasQR: false, circleId: 1 },
   { symbol: "VEN", name: "Venezuelan Bolivar", flag: "🇻🇪", paymentMethod: "Pago Movil", hasQR: false, circleId: 1,

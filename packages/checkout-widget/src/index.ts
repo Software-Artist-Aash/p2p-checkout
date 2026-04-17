@@ -6,4 +6,6 @@ export type {
   CheckoutSigner,
   CheckoutPhase,
   PlaceOrderResult,
+  PlaceOrderContext,
+  CurrencyOption,
 } from "./types";
