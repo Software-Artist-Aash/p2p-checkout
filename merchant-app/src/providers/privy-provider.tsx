@@ -9,6 +9,7 @@ export function PrivyAppProvider({ children }: { children: React.ReactNode }) {
     <Privy
       appId={PRIVY_APP_ID}
       config={{
+        loginMethods: ["email"],
         appearance: { theme: "light", accentColor: "#7C3AED" },
         defaultChain: chain,
         supportedChains: [chain],
