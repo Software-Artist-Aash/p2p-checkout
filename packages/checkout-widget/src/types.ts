@@ -43,6 +43,11 @@ export interface P2PCheckoutProps {
   amount?: string;
   productName?: string;
 
+  // Optional notice rendered above the "Pay now" button on the pre-order
+  // screen. Use for caller-specific context such as "wallet will be charged
+  // for gas" vs. "gas sponsored".
+  paymentNotice?: React.ReactNode;
+
   // Required for paidBuyOrder + cancelOrder on Diamond
   signer: CheckoutSigner;
 

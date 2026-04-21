@@ -14,7 +14,7 @@ import {
 export function P2PCheckout(props: P2PCheckoutProps) {
   const {
     orderId: initialOrderId, placeOrder,
-    amount, productName, signer,
+    amount, productName, signer, paymentNotice,
     chainId = 84532, diamondAddress = DEFAULT_DIAMOND_ADDRESS, rpcUrl,
     currency: demoCurrency,
     currencies,
@@ -178,6 +178,11 @@ export function P2PCheckout(props: P2PCheckoutProps) {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+            {paymentNotice && (
+              <div style={{ marginBottom: 12, padding: "12px 14px", background: color.warningSoft, border: `1px solid ${color.warning}33`, borderRadius: radius.md, fontSize: font.md, color: color.text, lineHeight: 1.5 }}>
+                {paymentNotice}
               </div>
             )}
             {state.error && (

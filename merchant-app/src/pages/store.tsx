@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { usePrivy, useSendTransaction } from "@privy-io/react-auth";
+import { usePrivy, useSendTransaction, useWallets } from "@privy-io/react-auth";
 import { createPublicClient, http, encodeFunctionData, stringToHex, keccak256, toHex } from "viem";
 import { baseSepolia } from "viem/chains";
 import { getRelayIdentity } from "@p2pdotme/sdk/payload";
@@ -73,6 +73,7 @@ const publicClient = createPublicClient({ chain: baseSepolia, transport: http() 
 export default function Store() {
   const { ready, authenticated, login, user, logout } = usePrivy();
   const { sendTransaction } = useSendTransaction();
+  const { wallets } = useWallets();
   const [quantities, setQuantities] = useState<Record<number, number>>({});
   const [checkoutProduct, setCheckoutProduct] = useState<number | null>(null);
 
@@ -80,17 +81,30 @@ export default function Store() {
   const setQty = (id: number, q: number) =>
     setQuantities({ ...quantities, [id]: Math.max(1, Math.min(10, q)) });
 
+  const primaryAddress = user?.wallet?.address?.toLowerCase();
+  const activeWallet =
+    wallets.find((w) => w.address.toLowerCase() === primaryAddress) ?? wallets[0];
+  const isEmbeddedWallet =
+    activeWallet?.walletClientType === "privy" ||
+    activeWallet?.connectorType === "embedded";
+
   const signer: CheckoutSigner | null = useMemo(() => {
-    const addr = user?.wallet?.address;
-    if (!addr) return null;
+    if (!activeWallet) return null;
     return {
-      address: addr as `0x${string}`,
+      address: activeWallet.address as `0x${string}`,
       sendTransaction: async (tx) => {
-        const result = await sendTransaction(tx, { sponsor: true });
+        const normalized = {
+          ...tx,
+          ...(tx.gasLimit !== undefined ? { gasLimit: `0x${tx.gasLimit.toString(16)}` } : {}),
+        };
+        const result = await sendTransaction(normalized, {
+          address: activeWallet.address,
+          ...(isEmbeddedWallet ? { sponsor: true } : {}),
+        });
         return { hash: result.hash as `0x${string}` };
       },
     };
-  }, [user?.wallet?.address, sendTransaction]);
+  }, [activeWallet, isEmbeddedWallet, sendTransaction]);
 
   const handleBuyNow = (productId: number) => {
     if (!authenticated) { login(); return; }
@@ -233,6 +247,20 @@ export default function Store() {
           amount={activeProduct ? `${activeProduct.priceUsdc * activeQty} USDC` : undefined}
           productName={activeProduct ? `${activeProduct.name} × ${activeQty}` : undefined}
           signer={signer}
+          paymentNotice={!isEmbeddedWallet ? (
+            <span>
+              You're paying with an external wallet, so you'll need{" "}
+              <strong>Base Sepolia ETH</strong> for gas. Want gas covered?{" "}
+              <button
+                type="button"
+                onClick={() => { setCheckoutProduct(null); logout(); }}
+                style={{ background: "none", border: "none", padding: 0, color: "#7c3aed", fontWeight: 600, cursor: "pointer", textDecoration: "underline", fontSize: "inherit" }}
+              >
+                Sign out and continue with email
+              </button>
+              .
+            </span>
+          ) : undefined}
           demo={false}
           mode="modal"
           open={true}
