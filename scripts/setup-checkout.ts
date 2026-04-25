@@ -48,7 +48,7 @@ async function main() {
     [
       "function registerIntegrator(address integrator, bool usdcThroughIntegrator) external",
       "function isActiveIntegrator(address integrator) external view returns (bool)",
-      "function getIntegratorConfig(address integrator) external view returns (tuple(bool isActive, bool usdcThroughIntegrator, uint256 totalVolume, uint256 activeOrderCount, uint256 outstandingDebt))",
+      "function getIntegratorConfig(address integrator) external view returns (tuple(bool isActive, bool usdcThroughIntegrator, uint256 totalVolume, uint256 activeOrderCount))",
     ],
     DIAMOND_ADDRESS
   );
@@ -122,7 +122,6 @@ async function main() {
   console.log(`  usdcThroughIntegrator: ${config.usdcThroughIntegrator}`);
   console.log(`  totalVolume: ${ethers.formatUnits(config.totalVolume, 6)} USDC`);
   console.log(`  activeOrderCount: ${config.activeOrderCount}`);
-  console.log(`  outstandingDebt: ${ethers.formatUnits(config.outstandingDebt, 6)} USDC`);
 
   const clientCheck = await integrator.clients(ERC721_CLIENT_ADDRESS);
   console.log(`Client registered on integrator: ${clientCheck.isRegistered ? "YES" : "NO"}`);

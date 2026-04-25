@@ -16,7 +16,7 @@ Integrators are **non-upgradeable** per the B2B spec. A business may deploy mult
 
 **Data continuity:**
 - Old orders are linked to the old integrator address in the subgraph's `B2BOrder.integrator` field
-- The `Integrator` entity tracks each address separately (volume, debt, active orders)
+- The `Integrator` entity tracks each address separately (volume, active orders)
 - Old integrator's on-chain state (sessions, daily volumes) remains readable forever
 - The `Orders` entity has full order data regardless of which integrator placed it
 
@@ -75,11 +75,9 @@ Both checks must pass for an order to be accepted.
 
 | Data | Source | Method |
 |---|---|---|
-| Integrator stats (volume, debt, active orders) | Subgraph `Integrator` entity | GraphQL query |
+| Integrator stats (volume, active orders) | Subgraph `Integrator` entity | GraphQL query |
 | Order list with status | Subgraph `B2BOrder` → join with `Orders` | GraphQL query |
 | Order details (amounts, timestamps, UPI) | Subgraph `Orders` entity | GraphQL query by orderId |
-| Clawback history | Subgraph `ClawbackEvent` entity | GraphQL query |
-| Debt recovery history | Subgraph `DebtRecoveryEvent` entity | GraphQL query |
 | Product prices | On-chain `SimpleERC721Client.getProductPrice()` | Contract read |
 | Registered clients | On-chain `MegapotCheckoutIntegrator.clients()` | Contract read |
 | User RP balances | On-chain `integrator.userRP(address)` | Contract read |
@@ -103,7 +101,6 @@ Both checks must pass for an order to be accepted.
 **Stats cards (aggregated across all integrator versions):**
 - Total volume (USDC)
 - Total orders (completed / cancelled / active)
-- Outstanding debt
 - Active integrator address + status
 
 **Recent orders table** (last 20):
@@ -191,7 +188,6 @@ Both checks must pass for an order to be accepted.
 - Active status on Diamond
 - Total volume
 - Active orders
-- Outstanding debt
 - Deployed date (from first transaction)
 
 **Actions:**
@@ -309,7 +305,6 @@ query IntegratorStats($addresses: [Bytes!]!) {
     isActive
     totalVolume
     activeOrderCount
-    outstandingDebt
   }
 }
 ```
@@ -341,15 +336,6 @@ query OrderDetail($orderId: BigInt!) {
     actualUsdcAmount actualFiatAmount currency
     userAddress placedAt acceptedAt paidAt completedAt cancelledAt
     acceptedMerchantAddress disputeStatus disputeFaultType
-  }
-}
-```
-
-### Clawback history
-```graphql
-query Clawbacks($integrator: Bytes!) {
-  clawbackEvents(where: { integrator: $integrator }, orderBy: blockTimestamp, orderDirection: desc) {
-    orderId requestedAmount receivedAmount shortfall isFullRecovery blockTimestamp
   }
 }
 ```

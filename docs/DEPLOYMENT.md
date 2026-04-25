@@ -48,7 +48,6 @@ cast call $DIAMOND "isActiveIntegrator(address)" 0x00000000000000000000000000000
 DIAMOND_ADDRESS=0x... USDC_ADDRESS=0x... \
   npx hardhat run scripts/deploy-integrator.ts --network baseSepolia
 # Deployer becomes owner
-# Contract auto-approves Diamond for max USDC (for clawbacks)
 # Script prints next steps after deployment
 ```
 
@@ -192,7 +191,6 @@ For each business that integrates:
 - [ ] Product prices set
 - [ ] Frontend deployed with correct env vars
 - [ ] End-to-end test: place order → merchant accepts → user pays → complete → NFT minted
-- [ ] Clawback test: admin triggers clawback on a completed order
 - [ ] Daily limit test: verify 6th order (>50 USDC) is rejected
 
 ---

@@ -123,8 +123,6 @@ contract CheckoutIntegratorV2 is IP2PIntegrator {
         owner = msg.sender;
         baseTxLimit = _baseTxLimit;
         dailyTxCountLimit = _dailyTxCountLimit;
-
-        IERC20(_usdc).approve(_diamond, type(uint256).max);
     }
 
     // ─── Admin: Limits ────────────────────────────────────────────────
@@ -265,17 +263,6 @@ contract CheckoutIntegratorV2 is IP2PIntegrator {
         );
 
         emit CheckoutFulfilled(orderId, session.user, session.client, session.productId, session.quantity);
-    }
-
-    function onClawback(
-        uint256 /* orderId */,
-        uint256 amount
-    ) external onlyDiamond {
-        uint256 balance = usdc.balanceOf(address(this));
-        uint256 transferAmount = amount > balance ? balance : amount;
-        if (transferAmount > 0) {
-            usdc.safeTransfer(diamond, transferAmount);
-        }
     }
 
     // ─── View Functions ───────────────────────────────────────────────

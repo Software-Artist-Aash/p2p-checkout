@@ -8,7 +8,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 /**
  * @title MockDiamond
  * @notice Simulates the P2P Diamond's B2BGatewayFacet for testing the integrator + client.
- *         Handles order placement, completion callbacks, and clawback.
+ *         Handles order placement and completion callbacks.
  */
 contract MockDiamond {
     using SafeERC20 for IERC20;
@@ -93,20 +93,5 @@ contract MockDiamond {
         );
 
         emit MockOrderCompleted(orderId);
-    }
-
-    /**
-     * @notice Simulates clawback
-     */
-    function simulateClawback(uint256 orderId, uint256 amount) external {
-        Order storage order = orders[orderId];
-        require(order.completed, "Not completed");
-
-        uint256 balanceBefore = usdc.balanceOf(address(this));
-        IP2PIntegrator(order.integrator).onClawback(orderId, amount);
-        uint256 received = usdc.balanceOf(address(this)) - balanceBefore;
-
-        // In real Diamond: track debt if shortfall, make merchant whole
-        require(received <= amount, "Over-returned");
     }
 }

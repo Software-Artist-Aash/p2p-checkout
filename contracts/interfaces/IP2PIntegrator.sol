@@ -19,9 +19,4 @@ interface IP2PIntegrator {
         uint256 amount,
         address recipientAddr
     ) external;
-
-    function onClawback(
-        uint256 orderId,
-        uint256 amount
-    ) external;
 }

@@ -215,7 +215,6 @@ cast call $INTEGRATOR_ADDRESS "getSession(uint256)" $ORDER_ID \
 | Integrator validates 50 USD/day limit | Yes | Yes |
 | Client mints NFT on payment | Yes | Yes |
 | Access control (onlyDiamond, onlyIntegrator, onlyOwner) | Yes | - |
-| Clawback / debt tracking | Yes | Manual |
 | Diamond merchant assignment | - | Yes |
 | B2B hook in completeOrder | - | Yes |
 | order.user = actual user (paidBuyOrder works) | - | Yes |

@@ -36,7 +36,6 @@ Business Site                   Checkout UI                     On-Chain
                          9. User marks "Paid"             ─ completeOrder() by merchant
                                                                │
                                                          10. onB2BOrderComplete():
-                                                               │ deduct debt if any
                                                                │ USDC → integrator
                                                                │ integrator.onOrderComplete()
                                                                │   → USDC → ERC721Client
@@ -63,7 +62,6 @@ contracts/interfaces/IP2PIntegrator.sol
 Exactly as spec defines:
 - `validateOrder(address user, uint256 amount, bytes32 currency) → bool`
 - `onOrderComplete(uint256 orderId, address user, uint256 amount, address recipientAddr)`
-- `onClawback(uint256 orderId, uint256 amount)`
 
 ### 1.2 `IB2BGateway.sol` (new interface)
 
@@ -76,7 +74,6 @@ External interface for the facet:
 - `onB2BOrderComplete(uint256 orderId)` — internal-facing, called from `completeOrder`
 - `registerIntegrator(address, bool)` — owner only
 - `deactivateIntegrator(address)` — owner only
-- `clawback(uint256 orderId, uint256 amount)` — owner/executor
 
 ### 1.3 `B2BGatewayStorage.sol` (new storage)
 
@@ -85,7 +82,7 @@ contracts/storages/B2BGatewayStorage.sol
 ```
 
 As per spec:
-- `IntegratorConfig { isActive, usdcThroughIntegrator, totalVolume, activeOrderCount, outstandingDebt }`
+- `IntegratorConfig { isActive, usdcThroughIntegrator, totalVolume, activeOrderCount }`
 - `Layout { mapping(address => IntegratorConfig) integrators, mapping(uint256 => address) orderIntegrator }`
 
 ### 1.4 `B2BGatewayFacet.sol` (new facet)
@@ -101,8 +98,7 @@ Key functions:
 | `registerIntegrator` | Owner | Whitelist integrator, EIP-1967 proxy check |
 | `deactivateIntegrator` | Owner | Deactivate, existing orders complete normally |
 | `placeB2BOrder` | Active integrators only | Validate via `integrator.validateOrder()`, create order with `order.user = user` param (NOT msg.sender), `recipientAddr` per config, skip RP/limit checks, standard merchant assignment |
-| `onB2BOrderComplete` | Internal (from completeOrder) | Deduct debt if any, route USDC per config, call `integrator.onOrderComplete()` |
-| `clawback` | Owner/Executor | Call `integrator.onClawback()`, track debt on shortfall, make merchant whole |
+| `onB2BOrderComplete` | Internal (from completeOrder) | Route USDC per config, call `integrator.onOrderComplete()` |
 
 **Critical detail for `placeB2BOrder`:**
 - Must set `order.user = user` (the param), NOT `msg.sender` (which is the integrator)
@@ -141,9 +137,6 @@ event IntegratorRegistered(address indexed integrator, bool usdcThroughIntegrato
 event IntegratorDeactivated(address indexed integrator);
 event B2BOrderPlaced(uint256 indexed orderId, address indexed integrator, address indexed user, uint256 amount);
 event B2BOrderCompleted(uint256 indexed orderId, address indexed integrator, uint256 amount);
-event ClawbackExecuted(uint256 indexed orderId, address indexed integrator, uint256 amount);
-event ClawbackDebt(uint256 indexed orderId, address indexed integrator, uint256 shortfall);
-event DebtRecovered(address indexed integrator, uint256 amount, uint256 remainingDebt);
 ```
 
 ---
@@ -185,13 +178,11 @@ struct CheckoutSession {
 | `userPlaceOrder(client, productId, amount, currency, circleId, pubKey, pcConfigId)` | End-user | Verify client registered, amount matches product price, call `diamond.placeB2BOrder(msg.sender, amount, currency, address(this), ...)`, store CheckoutSession |
 | `validateOrder(user, amount, currency)` | Diamond (callback) | Check `userDailyVolume[user][today] + amount <= DAILY_LIMIT`, return true/false |
 | `onOrderComplete(orderId, user, amount, recipientAddr)` | Diamond (callback) | Look up session, transfer USDC to client, call `client.onCheckoutPayment(user, amount, productId)`, mark fulfilled |
-| `onClawback(orderId, amount)` | Diamond (callback) | Transfer min(balance, amount) USDC back to Diamond |
 | `registerClient(clientAddr, ...)` | Owner | Register a business client contract |
 | `removeClient(clientAddr)` | Owner | Deregister client |
 
 **Constructor:**
 - Sets `diamond`, `usdc`, `owner` as immutable
-- Pre-approves Diamond for max USDC (for clawbacks)
 
 ### 2.2 `ICheckoutClient.sol` (interface)
 
@@ -340,11 +331,10 @@ Or a JS SDK that opens a popup/iframe (future enhancement, not MVP).
 ## Phase 4: Subgraph Updates (contracts-v4 subgraph)
 
 New entities:
-- **Integrator** — address, isActive, usdcThroughIntegrator, totalVolume, activeOrderCount, outstandingDebt
+- **Integrator** — address, isActive, usdcThroughIntegrator, totalVolume, activeOrderCount
 - **B2BOrder** — orderId, integrator, user, amount, currency, status, timestamps
-- **ClawbackEvent** — orderId, integrator, requestedAmount, receivedAmount, shortfall, debtRemaining
 
-Mapped from: `IntegratorRegistered`, `IntegratorDeactivated`, `B2BOrderPlaced`, `B2BOrderCompleted`, `ClawbackExecuted`, `ClawbackDebt`, `DebtRecovered`.
+Mapped from: `IntegratorRegistered`, `IntegratorDeactivated`, `B2BOrderPlaced`, `B2BOrderCompleted`.
 
 ---
 
@@ -360,14 +350,11 @@ Mapped from: `IntegratorRegistered`, `IntegratorDeactivated`, `B2BOrderPlaced`, 
 - End-user can call `paidBuyOrder` directly for B2B orders
 - End-user can call `cancelOrder` directly for B2B orders
 - `onB2BOrderComplete` — USDC routing (through integrator vs direct)
-- `onB2BOrderComplete` — debt deduction from settlement
-- `clawback` — full recovery, partial recovery + debt tracking, zero balance
 
 **MegapotCheckoutIntegrator tests:**
 - `userPlaceOrder` — happy path end-to-end (place → accept → pay → complete → NFT minted)
 - `validateOrder` — daily limit enforcement (50 USD), day rollover reset
 - `onOrderComplete` — USDC forwarded to client, NFT minted to user
-- `onClawback` — USDC returned to Diamond
 - Only Diamond can call callbacks
 - Only registered clients accepted
 
@@ -390,7 +377,6 @@ Mapped from: `IntegratorRegistered`, `IntegratorDeactivated`, `B2BOrderPlaced`, 
 9. End-user calls paidBuyOrder on Diamond
 10. Merchant calls completeOrder on Diamond
 11. Assert: NFT minted to end-user, integrator USDC balance = 0, session.fulfilled = true
-12. Test clawback: admin triggers clawback, assert debt tracking
 ```
 
 ---

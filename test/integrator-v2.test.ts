@@ -192,18 +192,6 @@ describe("CheckoutIntegratorV2 — RP TX Limit + Daily Count + Quantity", functi
     });
   });
 
-  describe("Clawback", function () {
-    it("returns USDC on clawback when integrator has balance", async function () {
-      await integrator.connect(user).userPlaceOrder(await erc721Client.getAddress(), PRODUCT_ID, 1, INR, 1, "", 0, 0);
-      await mockDiamond.simulateOrderComplete(1);
-      await mockUsdc.mint(await integrator.getAddress(), USDC(20));
-      const before = await mockUsdc.balanceOf(await mockDiamond.getAddress());
-      await mockDiamond.simulateClawback(1, USDC(5));
-      const after = await mockUsdc.balanceOf(await mockDiamond.getAddress());
-      expect(after - before).to.equal(USDC(5));
-    });
-  });
-
   describe("ERC721 Client quantity", function () {
     it("rejects mint from non-integrator", async function () {
       await expect(

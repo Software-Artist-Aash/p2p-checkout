@@ -95,8 +95,6 @@ interface IP2PIntegrator {
         external returns (bool);
     function onOrderComplete(uint256 orderId, address user, uint256 amount, address recipient)
         external;
-    function onClawback(uint256 orderId, uint256 amount)
-        external;
 }
 ```
 

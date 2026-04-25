@@ -34,15 +34,8 @@ npx hardhat test
 |---|---|---|
 | 10 | validateOrder rejects non-Diamond caller | PASS |
 | 11 | onOrderComplete rejects non-Diamond caller | PASS |
-| 12 | onClawback rejects non-Diamond caller | PASS |
 
-### 1.5 Clawback
-| # | Test | Status |
-|---|---|---|
-| 13 | Full clawback when integrator has balance | PASS |
-| 14 | Partial clawback when insufficient balance (no revert) | PASS |
-
-### 1.6 ERC721 Client
+### 1.5 ERC721 Client
 | # | Test | Status |
 |---|---|---|
 | 15 | Rejects mint from non-integrator | PASS |
@@ -98,22 +91,9 @@ These test the B2BGatewayFacet on the actual Diamond. Write in `contracts-v4/tes
 | 25 | USDC routed to recipientAddr when usdcThroughIntegrator=false |
 | 26 | integrator.onOrderComplete callback fires |
 | 27 | activeOrderCount decremented |
-| 28 | Debt deducted from settlement when outstandingDebt > 0 |
-| 29 | DebtRecovered event emitted with correct amounts |
-| 30 | Rejects caller that is not address(this) |
+| 28 | Rejects caller that is not address(this) |
 
-### 2.5 Clawback
-| # | Test |
-|---|---|
-| 31 | Full clawback — USDC returned, merchant made whole |
-| 32 | Partial clawback — shortfall tracked as debt |
-| 33 | Zero clawback (integrator has no balance) — full amount as debt |
-| 34 | Rejects clawback on non-B2B order |
-| 35 | Rejects clawback on non-completed order |
-| 36 | Rejects non-admin caller |
-| 37 | Debt auto-deducted on next order completion |
-
-### 2.6 View Functions
+### 2.5 View Functions
 | # | Test |
 |---|---|
 | 38 | `isActiveIntegrator` returns correct state |
@@ -166,16 +146,7 @@ Full end-to-end on Base Sepolia with real contracts.
 | 2 | User clicks "Cancel Order" | TX to Diamond.cancelOrder(orderId) |
 | 3 | Verify order cancelled | Status = CANCELLED, no USDC moved, no NFT minted |
 
-### 3.5 Clawback
-| Step | Action | Verify |
-|---|---|---|
-| 1 | Complete an order (NFT minted, USDC at client) | Normal flow |
-| 2 | Fund integrator with USDC (simulating held balance) | Send USDC to integrator |
-| 3 | Admin calls clawback(orderId, amount) | Integrator returns USDC to Diamond |
-| 4 | Check integrator debt | If partial return, debt tracked |
-| 5 | Complete another order | Debt auto-deducted from settlement |
-
-### 3.6 Privy Cross-App Wallet
+### 3.5 Privy Cross-App Wallet
 | Step | Action | Verify |
 |---|---|---|
 | 1 | Log in on business site with Privy | Embedded wallet created (0xUser) |
@@ -183,7 +154,7 @@ Full end-to-end on Base Sepolia with real contracts.
 | 3 | Verify address on checkout page | Same 0xUser address as business site |
 | 4 | Sign transaction | Uses same wallet, no re-authentication |
 
-### 3.7 Edge Cases
+### 3.6 Edge Cases
 | # | Scenario | Expected |
 |---|---|---|
 | 1 | Invalid URL params (missing integrator) | Error page shown |
@@ -205,11 +176,8 @@ Full end-to-end on Base Sepolia with real contracts.
 - [ ] onlyIntegrator on client's onCheckoutPayment
 - [ ] No proxy patterns in integrator (EIP-1967 check on registration)
 - [ ] No selfdestruct in integrator or client
-- [ ] USDC approval to Diamond is permanent (set in constructor)
 - [ ] Daily limit cannot be bypassed by calling validateOrder directly (onlyDiamond)
 - [ ] order.user set to actual user (not integrator) — verified in test #15
-- [ ] Clawback handles zero balance gracefully (no revert)
-- [ ] Debt tracking arithmetic: no underflow on deduction
 
 ### Frontend
 - [ ] URL params validated before contract calls
